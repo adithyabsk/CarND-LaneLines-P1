@@ -1,53 +1,81 @@
-# **Finding Lane Lines on the Road** 
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+# Finding Lane Lines on the Road
+#### Adithya Balaji
 
-<img src="examples/laneLines_thirdPass.jpg" width="480" alt="Combined Image" />
-
-Overview
 ---
 
-When we drive, we use our eyes to decide where to go.  The lines on the road that show us where the lanes are act as our constant reference for where to steer the vehicle.  Naturally, one of the first things we would like to do in developing a self-driving car is to automatically detect lane lines using an algorithm.
+**Project Goals**
+* Develop a computer vision pipeline that finds lane lines on the road
+* Reflect on the pipeline in a written report
 
-In this project you will detect lane lines in images using Python and OpenCV.  OpenCV means "Open-Source Computer Vision", which is a package that has many useful tools for analyzing images.  
+[//]: # (Image References)
 
-To complete the project, two files will be submitted: a file containing project code and a file containing a brief write up explaining your solution. We have included template files to be used both for the [code](https://github.com/udacity/CarND-LaneLines-P1/blob/master/P1.ipynb) and the [writeup](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md).The code file is called P1.ipynb and the writeup template is writeup_template.md 
+[image1]: ./writeup_resources/initial_image.jpg "Initial Image"
+[image2]: ./writeup_resources/region_filter.jpg "Region Filtering"
+[image3]: ./writeup_resources/color_filter.jpg "Color Filtering"
+[image4]: ./writeup_resources/grayscale_filter.jpg "Grayscale Filter"
+[image5]: ./writeup_resources/blur_filter.jpg "Blur Filter"
+[image6]: ./writeup_resources/simple_hough.jpg "Simple Hough Lines"
+[image7]: ./writeup_resources/complex_hough.jpg "Complex Hough Lines"
+[image8]: ./writeup_resources/final_result.jpg "Pipeline Result"
 
-To meet specifications in the project, take a look at the requirements in the [project rubric](https://review.udacity.com/#!/rubrics/322/view)
-
-
-Creating a Great Writeup
----
-For this project, a great writeup should provide a detailed response to the "Reflection" section of the [project rubric](https://review.udacity.com/#!/rubrics/322/view). There are three parts to the reflection:
-
-1. Describe the pipeline
-
-2. Identify any shortcomings
-
-3. Suggest possible improvements
-
-We encourage using images in your writeup to demonstrate how your pipeline works.  
-
-All that said, please be concise!  We're not looking for you to write a book here: just a brief description.
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup. Here is a link to a [writeup template file](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md). 
-
-
-The Project
 ---
 
-## If you have already installed the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) you should be good to go!   If not, you should install the starter kit to get started on this project. ##
+## Reflection
 
-**Step 1:** Set up the [CarND Term1 Starter Kit](https://classroom.udacity.com/nanodegrees/nd013/parts/fbf77062-5703-404e-b60c-95b78b2f3f9e/modules/83ec35ee-1e02-48a5-bdb7-d244bd47c2dc/lessons/8c82408b-a217-4d09-b81d-1bda4c6380ef/concepts/4f1870e0-3849-43e4-b670-12e6f2d4b7a7) if you haven't already.
+### The Pipeline
+#### Summary
+The vision pipeline would filter and annotate the image as follows:
 
-**Step 2:** Open the code in a Jupyter Notebook
+Initial Image              |  Pipeline Result
+:-------------------------:|:-------------------------:
+![][image1]                |  ![][image8]
 
-You will complete the project code in a Jupyter notebook.  If you are unfamiliar with Jupyter Notebooks, check out <A HREF="https://www.packtpub.com/books/content/basics-jupyter-notebook-and-python" target="_blank">Cyrille Rossant's Basics of Jupyter Notebook and Python</A> to get started.
+Note: We will be using a snapshot image form the challenge image to visualize the pipeline process
 
-Jupyter is an Ipython notebook where you can run blocks of code and see results interactively.  All the code for this project is contained in a Jupyter notebook. To start Jupyter in your browser, use terminal to navigate to your project directory and then run the following command at the terminal prompt (be sure you've activated your Python 3 carnd-term1 environment as described in the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) installation instructions!):
+The vision processing pipeline consists of three main sections:
 
-`> jupyter notebook`
+1. Color based filtering
+2. Hough lines filtering
+3. Line filtering
 
-A browser window will appear showing the contents of the current directory.  Click on the file called "P1.ipynb".  Another browser window will appear displaying the notebook.  Follow the instructions in the notebook to complete the project.  
+#### Color Based Filtering
+Color based filtering consists of two parts. First the image is masked to a region of interest which filters the image to nearly only the lane lines. The image is then converted to the HSV and filtered by color. This colorspace change is performed so that colors can be more easily selected. Surprisingly with a filtering based on value only, the lane lines could be isolated.
 
-**Step 3:** Complete the project and submit both the Ipython notebook and the project writeup
+Region Filtering           |  Color Filtering
+:-------------------------:|:-------------------------:
+![][image2]                |  ![][image3]
+
+#### Hough Lines filtering
+Next, the color filtered image enters the Hough lines filtering portion. Here the image is first converted to grayscale. Next, a gaussian blur is applied and then canny edge detection is performed on the image. Finally, the Hough lines algorithm is applied to the canny edges result and the initial lines annotation is shown in red.
+
+Grayscale Conversion       |  Blur Filter              |  Simple Hough Lines
+:-------------------------:|:-------------------------:|:-------------------------
+![][image4]                |  ![][image5]              |  ![][image6]
+
+#### Line Filtering
+Now that we have a few candidate lines segments on each side of lane, we can take the average of these lines in order to present a final annotated road. This pipeline is mostly included in the helper function section. First the lines are separated by slope into left and right lines. Next, the lines are averaged and the bottom point is used to generate the equations that are to represent the average line. Next, this average line is transformed into points to be drawn on the image using the intersection of the middle of the image and the base of the image as reference lines. Lastly, if both a left and right lane are detected the lines are shaved to their intersection.
+
+These filtered lines are then blended into the initial image to annoate the lane line position.
+
+Complex Hough Lines        |  Pipeline Result
+:-------------------------:|:-------------------------:
+![][image7]                |  ![][image8]
+
+### Future Work
+#### Shortcomings and improvments
+Although, the pipeline covers a lot of edge cases there is still some potential areas of improvement:
+
+1. The pipeline does not always detect a left and right lane
+	* The pipeline could be further tuned to match these edge cases using the cv2 morphological filters to better capture the lane markings
+2. The pipeline jitters quite a bit
+	* In order to smoothen this jitter the pipeline could cache previous detections and only update the annotation if the lane changes past a set point
+3. The pipeline needs to be tuned to road conditions
+	* Jumping from the white and yellow lanes to the challenge image required additional tuning of the pipeline which in the end made the pipeline more robust but a color invariant solution could avoid this issue altogether
+
+
+
+
+
+
+
 
